@@ -1,0 +1,42 @@
+<html>
+<head>
+  <style type="text/css">
+  .title {color: black;}
+  svg {text: "hi"; outline: thin solid grey;}
+  </style>
+  <script src="http://d3js.org/d3.v4.min.js" charset="utf-8">
+  </script>
+</head>
+<body>
+  <p>
+    <span class="title">Scatter Plot 1D</span>
+  </p>
+  <script type="text/javascript">
+      var values = d3.range(10).map(function(x) {return Math.random(x)*500})
+      var values2 = values.map(function(x) {return x.toPrecision(5)})
+      var width = 500
+      var height = 100
+      var border = 1
+      var svg = d3.select("body")
+                  .append("svg")
+                  .attr("width", width)
+                  .attr("height", height);
+      svg.selectAll("circle").data(values).enter().append("circle")
+          .attr("cy", height/2)
+          .attr("r", 5)
+          .attr("cx", function(d) {return d});
+      svg.selectAll("text").data(values2).enter().append("text")
+          .text(function(d) {return d})
+          .attr("y", height/2.1)
+          .attr("fill", "red")
+          .attr("font-size", "12px")
+          .attr("x", function(d) {return d});
+      svg.append("text")
+          .text("Number of Seconds Before Next Email")
+          .attr("y", (height/2)+35)
+          .attr("x", 125)
+          .attr("fill", "black")
+          .attr("font-size", "14px");
+  </script>
+</body>
+</html>

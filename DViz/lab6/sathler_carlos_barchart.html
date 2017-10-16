@@ -1,0 +1,99 @@
+<html>
+<head>
+  <title>"Bar chart"</title>
+  <script src="http://d3js.org/d3.v4.min.js" charset="utf-8">
+  </script>
+</head>
+<body>
+  <div id="bar1">
+    <script type="text/javascript">
+    var svg1 = d3.select("#bar1")
+                 .append("svg")
+                 .attr("width", 500)
+                 .attr("height", 30)
+                 .attr("fill",'steelblue');
+    var bar1 = svg1.append("rect")
+                 .attr("width", 500)
+                 .attr("height", 30);
+    svg1.append("text")
+                 .attr("x", 470)
+                 .attr("y", 20)
+                 .text("500")
+                 .style("fill", "white")
+                 .attr("font-family", "sans-serif");
+    </script>
+  </div>
+  <div id="bar2">
+    <script type="text/javascript">
+    var svg2 = d3.select("#bar2")
+                 .append("svg")
+                 .attr("width", 500)
+                 .attr("height", 30)
+                 .attr("fill",'steelblue');
+    var bar2 = svg2.append("rect")
+                 .attr("width", 400)
+                 .attr("height", 30);
+    svg2.append("text")
+                 .attr("x", 370)
+                 .attr("y", 21)
+                 .text("400")
+                 .style("fill", "white")
+                 .attr("font-family", "sans-serif");
+    </script>
+  </div>
+  <div id="bar3">
+    <script type="text/javascript">
+    var svg3 = d3.select("#bar3")
+                 .append("svg")
+                 .attr("width", 500)
+                 .attr("height", 30)
+                 .attr("fill",'steelblue');
+    var bar3 = svg3.append("rect")
+                 .attr("width", 300)
+                 .attr("height", 30);
+    svg3.append("text")
+                 .attr("x", 270)
+                 .attr("y", 22)
+                 .text("300")
+                 .style("fill", "white")
+                 .attr("font-family", "sans-serif");
+    </script>
+  </div>
+  <div id="bar4">
+    <script type="text/javascript">
+    var svg4 = d3.select("#bar4")
+                 .append("svg")
+                 .attr("width", 500)
+                 .attr("height", 30)
+                 .attr("fill",'steelblue');
+    var bar4 = svg4.append("rect")
+                 .attr("width", 200)
+                 .attr("height", 30);
+    svg4.append("text")
+                 .attr("x", 170)
+                 .attr("y", 23)
+                 .text("200")
+                 .style("fill", "white")
+                 .attr("font-family", "sans-serif");
+  </script>
+  </div>
+  <div id="bar5">
+    <script type="text/javascript">
+    var svg5 = d3.select("#bar5")
+                 .append("svg")
+                 .attr("width", 500)
+                 .attr("height", 30)
+                 .attr("fill",'steelblue');
+    var bar5 = svg5.append("rect")
+                 .attr("width", 100)
+                 .attr("height", 30);
+    svg5.append("text")
+                 .attr("x", 70)
+                 .attr("y", 22)
+                 .text("100")
+                 .style("fill", "white")
+                 .attr("font-family", "sans-serif");
+  </script>
+  </div>
+</body>
+</html>
