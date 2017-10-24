@@ -93,8 +93,22 @@ def plot_when_less_is_more_by_state(df, fig, ax):
     states = df['State'].drop_duplicates().values
     rep_filter = df['Party']=='republican'
     dem_filter = df['Party']=='democrat'
-    rpct = df[rep_filter]['%_of_Total'].values
-    dpct = df[dem_filter]['%_of_Total'].values
+
+    # will sort df, by highest % of total to smalest, regardless of party
+    # first zero out numbers for states where votes yielded no wins 
+    # (for the purpose of how many votes it took to win seat, infite % == 0 votes)
+    df.loc[df['%_of_Total'].isnull(), '%_of_Total'] = 0
+    df['%_of_Total'] = np.where(df['%_of_Total']>100, 0, df['%_of_Total'])
+    df_rep = df[rep_filter][['State','Party','%_of_Total']]
+    df_dem = df[dem_filter][['State','Party','%_of_Total']]
+    df_all = pd.merge(df_rep, df_dem, on='State')
+    df_all['%_High'] = df_all[['%_of_Total_x','%_of_Total_y']].\
+                                apply(lambda x: max(x[0],x[1]), axis=1)
+    df_all.sort_values(['%_High'], ascending=False, inplace=True)
+
+    states = df_all['State'].values
+    rpct = df_all['%_of_Total_x'].values
+    dpct = df_all['%_of_Total_y'].values
 
     state_count = len(states)
     ind = np.arange(state_count) + 1 # the x locations for the groups
@@ -125,19 +139,22 @@ def plot_when_less_is_more_by_state(df, fig, ax):
 
 
 #------------------------------------------------------------------------------------
-# plot_when_less_is_more_by_state_party
-# 
 def plot_when_less_is_more_by_state_party(overall, bystate, party_id, fig, ax):
 
     avg_votes_per_seat = overall[overall['Party']==party_id]['%_Total_Votes'].values
+    filter = ((bystate['Party']==party_id) & (bystate['%_of_Total']<101) & \
+              (bystate['%_of_Total']>0))
+    df = bystate[filter][['State','%_of_Total']].\
+                 sort_values(['%_of_Total','State'], ascending=[False, True])
+
 
     ax.set_xlabel('State')
     ax.set_ylabel('% of National Votes')
     ax.axhline(y=avg_votes_per_seat, linestyle='-', alpha=0.2, color=party_color[party_id])
-    ax.set_title('Less is More (' + party_id + '):\n' + 
-                 'Percent of National Votes Needed to Elect Party Candidate in State')
-    bystate[bystate['Party']==party_id][['State','%_of_Total']].plot.bar\
-                 (x='State', ax=ax, color=party_color[party_id], legend=None, ylim=(0,0.8))
+    plt_title = 'Percent of National Votes Needed to Elect ' + party_id.title() + \
+                ' in State (Less Votes = More Power)'
+    ax.set_title(plt_title)
+    df.plot.bar(x='State', ax=ax, color=party_color[party_id], legend=None, ylim=(0,0.8))
 
 
 #------------------------------------------------------------------------------------
@@ -174,7 +191,7 @@ def plot_when_less_is_more_state_detail(df, fig, ax, figtitle, *states):
     
         # add some text for labels, title and axes ticks
         ax.axes.get_yaxis().set_visible(False)
-        ax.axes.set_ylim(0,100)
+        ax.axes.set_ylim(0,105)
         ax.set_xlabel('\nElector')
         ax.set_xticks(ind + width / 2)
         ax.set_xticklabels(('Republican', 'Democrat', 'Others'))
