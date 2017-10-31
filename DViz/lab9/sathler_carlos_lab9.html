@@ -1,12 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style type="text/css"></style>
+  <style type="text/css">
+    circle {
+		  fill: steelblue;
+		}
+		.axis path,
+		.axis line {
+				fill: none;
+				stroke: black;
+				shape-rendering: crispEdges;
+		}
+
+		.axis text {
+				font-family: sans-serif;
+				font-size: 11px;
+		}
+  </style>
   <script type="text/javascript" src="http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
 </head>
 <body>
-  <p>My Lab8 Solution</p>
-  <script>
+  <p>
+    Click on this text to change to log-scale.
+  </p>
+  <script type="text/javascript">
     var height = 500
     var width = 1000
     var padding = 30
@@ -14,17 +31,18 @@
               .append("svg")
               .attr("height", height)
               .attr("width", width);
-              //.attr("style", "outline: thin solid grey")
     d3.csv("co2_income.csv", function(data) {
       var xmax = d3.max(data, function(d) {return +d.income; });
       var ymax = d3.max(data, function(d) {return +d.co2_emission; });
       var rmax = d3.max(data, function(d) {return +d.co2_emission; });
       var xScale = d3.scaleLinear()
                 .domain([0, xmax])
-                .range([padding, width-padding]);
+                .range([padding, width-padding])
+                .nice();
       var yScale = d3.scaleLinear()
                 .domain([ymax, 0])
-                .range([padding, height-padding]);
+                .range([padding, height-padding])
+                .nice();
       var rScale = d3.scaleLinear()
                 .domain([0, rmax])
                 .range([1, 10]);
@@ -34,8 +52,33 @@
                .attr('cx', function(d) {return xScale(+d.income)})
                .attr('cy', function(d) {return yScale(+d.co2_emission)})
                .attr('r', function(d) {return rScale(+d.co2_emission)});
-
-      });
+      var xAxis = d3.axisBottom()
+               .scale(xScale);
+      svg.append("g")
+               .attr("class", "x axis")
+               .attr("transform", "translate(0," + (height - padding) +")")
+               .call(xAxis);
+      var yAxis = d3.axisLeft()
+               .scale(yScale);
+      svg.append("g")
+               .attr("class", "y axis")
+               .attr("transform", "translate(" + (padding) +",0)")
+               .call(yAxis);
+               d3.select("p")
+                   .on("click", function() {
+                   var xScale = d3.scaleLog().base(10)
+               		         .domain([1, xmax])
+                       	   .range([padding, width - padding])
+                           .nice();
+                   var xLogAxis = d3.axisBottom()
+                           .scale(xScale);
+                   svg.select(".x")
+                           .call(xLogAxis);
+                   svg.selectAll("circle")
+                   	       .transition()
+                           .attr('cx', function(d) {return xScale(+d.income)})
+               });
+    });
   </script>
 </body>
 </html>
