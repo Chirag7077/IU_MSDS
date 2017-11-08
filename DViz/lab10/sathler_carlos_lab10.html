@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    line {
+		  fill: steelblue;
+		}
+		.axis path,
+		.axis line {
+				fill: none;
+				stroke: black;
+				shape-rendering: crispEdges;
+		}
+
+		.axis text {
+				font-family: sans-serif;
+				font-size: 11px;
+		}
+  </style>
+  <script type="text/javascript" src="http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+</head>
+<body>
+  <p>
+    Click "Start Animiation" button to build the line plot.<br>
+    Click "Reset" button to revert back to empty blank plot.
+  </p>
+  <button id="start">Start Animation</button>
+  <button id="remove">Reset</button>
+  <script type="text/javascript">
+    var height = 500
+    var width = 1000
+    var padding = 70
+    var svg = d3.select("body")
+              .append("svg")
+              .attr("height", height)
+              .attr("width", width);
+    d3.csv("spanish-silver.csv", function(data) {
+      var xmin = d3.min(data, function(d) {return +d.year; });
+      var ymin = d3.min(data, function(d) {return +d.silver_minted; });
+      var xmax = d3.max(data, function(d) {return +d.year; });
+      var ymax = d3.max(data, function(d) {return +d.silver_minted; });
+      var xScale = d3.scaleLinear()
+                .domain([xmin, xmax])
+                .range([padding, width-padding])
+                .nice();
+      var yScale = d3.scaleLinear()
+                .domain([ymax, ymin])
+                .range([padding, height-padding])
+                .nice();
+      var xAxis = d3.axisBottom()
+               .scale(xScale);
+      var yAxis = d3.axisLeft()
+               .scale(yScale);
+      var line = d3.line()
+               .x(function(d) { return xScale(d.year); })
+               .y(function(d) { return yScale(d.silver_minted); })
+               .curve(d3.curveBasis);
+      svg.append("g")
+               .attr("class", "x axis")
+               .attr("transform", "translate(0," + (height - padding) +")")
+               .call(xAxis);
+      svg.append("g")
+               .attr("class", "y axis")
+               .attr("transform", "translate(" + (padding) +",0)")
+               .call(yAxis);
+      d3.select("#start").on("click", function() {
+           var path = svg.append("path")
+                    .attr("class", "line")
+                    .attr("d", line(data))
+                    .attr("stroke", "steelblue")
+                    .attr("fill", "none");
+           var totalLength = path.node().getTotalLength();
+           path
+           .attr("stroke-dasharray", totalLength + " " + totalLength)
+           .attr("stroke-dashoffset", totalLength)
+           .transition()
+           .duration(5000)
+           .attr("stroke-dashoffset", 0);
+      });
+      d3.select("#remove").on("click", function() {
+           d3.select('path.line').remove();
+      });
+    });
+  </script>
+</body>
+</html>
