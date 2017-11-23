@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import statsmodels as stats
-from sklearn.preprocessing import MinMaxScaler 
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
 import theano 
 import tensorflow as tf
@@ -44,6 +44,46 @@ def get_indexed_dataset(path):
 def split_dataset_by_city(df):
     return df[df['city']=='iq'], df[df['city']=='sj']
 
+# will set nan to avarage value for the column for the given weekofyear
+def set_nan_to_week_mean(df_with_nans):
+
+    cityweek_mean = df_with_nans.groupby(['city','weekofyear']).mean().to_dict()
+    # here's how we'd retrive mean ndvi_ne for city of iquito, week 1
+    # cityweek_mean['ndvi_ne'][('iq',1)]  
+
+    df_clean = df_with_nans.copy()
+    
+    # row is index to row
+    # cols is series with series index = dataframe column name
+    #                     series value = dataframe column value 
+    #
+    skip_columns = set(['city','weekofyear','week_start_date','total_cases'])
+
+    # process iquito first
+    where = df_with_nans['city'] == 'iq'
+    for (row, cols) in df_with_nans[where].iterrows():
+        for idx in cols.index:
+            if pd.isnull(cols[idx]):
+                 #print('In rows {}, found null for field {}'.format(row, idx))
+                 if idx not in skip_columns: 
+                      # there are no values for weekofyear = 53
+                      week_of_year = min(52, cols['weekofyear'])
+                      df_clean.loc[row, idx] = cityweek_mean[idx][('iq', week_of_year)]
+
+    # process san juan
+    where = df_with_nans['city'] == 'sj'
+    for (row, cols) in df_with_nans[where].iterrows():
+        for idx in cols.index:
+            if pd.isnull(cols[idx]):
+                 #print('In rows {}, found null for field {}'.format(row, idx))
+                 if idx not in skip_columns: 
+                      # there are no values for weekofyear = 53
+                      week_of_year = min(52, cols['weekofyear'])
+                      df_clean.loc[row, idx] = cityweek_mean[idx][('sj', week_of_year)]
+
+    return df_clean
+
+# not used
 def prep_interpolate(df):
     dfnanfixdriver = pd.DataFrame(df.count()).reset_index()
     dfnanfixdriver.columns = ('colname','rowcount')
@@ -55,16 +95,14 @@ def prep_interpolate(df):
             df[col].interpolate(method='linear', axis=0, inplace=True)  
     return df
 
+
 # preprocess train data
 def preprocess(df, timesteps=1):
-
-    # step 3: interpolate nans
-    df = prep_interpolate(df.iloc[:,4:])
 
     # step 4: split array into features (starting at col 5) and labels 
     X = df.values[:,:-1].astype('float32')
     y = df.values[:,-1].reshape(X.shape[0],1)
-
+    
     # step 5: normalize all features 
     scaler = MinMaxScaler(feature_range=(0,1))
     X_scaled = scaler.fit_transform(X)
@@ -86,17 +124,11 @@ def preprocess_test(df_train, df_test, timesteps=1):
     # will append training data, which preceeds test data in time
     # so we can create sequences using previous periods data for our predictions
     # just like we did during training 
-    Xtrain = df_train.values[:,4:-1].astype('float32')
-
-    df_test = prep_interpolate(df_test.iloc[:,4:])
-    df_test.fillna(0, inplace=True)
+    Xtrain = df_train.values[:,:-1].astype('float32')
 
     X = np.concatenate((Xtrain, df_test.values.astype('float32')), axis=0)
     scaler = MinMaxScaler(feature_range=(0,1))
     X_scaled = scaler.fit_transform(X)
-
-    # save n rows (n=timesteps)
-    #top_rows = X_scaled[0:timesteps] 
 
     # shifts features one row at a time and pads them to the left of existing feature set
     feature_count = X.shape[1]
@@ -104,12 +136,6 @@ def preprocess_test(df_train, df_test, timesteps=1):
     for i in range(1, timesteps):
         leftadd = X_scaled[:-1,:feature_count] 
         X_scaled = np.concatenate((leftadd, X_scaled[1:,:]), axis=1)
-
-    # X_scaled is timesteps rows short, need to add n=timestep rows back at the top
-    #for i in range(timesteps, 0, -1):
-    #   to_add = np.repeat(top_rows[i-1], timesteps, axis=0).\
-    #            reshape(1,feature_count*timesteps)
-    #   X_scaled = np.concatenate((to_add, X_scaled), axis=0)
 
     return X_scaled[-df_test_rowcount:,:] 
 

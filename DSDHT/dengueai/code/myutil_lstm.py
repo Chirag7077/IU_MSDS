@@ -83,33 +83,82 @@ def set_nan_to_week_mean(df_with_nans):
 
     return df_clean
 
-# not used
-def prep_interpolate(df):
-    dfnanfixdriver = pd.DataFrame(df.count()).reset_index()
-    dfnanfixdriver.columns = ('colname','rowcount')
-    target = dfnanfixdriver['rowcount'].max()
-    collist = list(dfnanfixdriver.colname.values)
-    for col in collist:
-        non_nan_count = dfnanfixdriver[dfnanfixdriver['colname']==col]['rowcount'].values[0]
-        if non_nan_count < target:
-            df[col].interpolate(method='linear', axis=0, inplace=True)  
-    return df
 
+def init_preprocess(df, flagin):
+
+    # create total_cases series to append to dataset 
+    # series will be added as a feature
+    s_total_cases2 = df['total_cases'].astype('float64')
+    s_total_cases2.name = 'total_cases2'
+
+    # remove nans
+    df = set_nan_to_week_mean(df.copy())
+
+    df_X = df.iloc[:,:-1]
+    df_y = df.iloc[:,-1]
+    df_X = pd.concat((df_X, pd.DataFrame(s_total_cases2)), axis=1)
+    df = pd.concat((df_X, df_y), axis=1)
+
+    # convert heavily skewed features to log scale
+    df['station_precip_mm'] = np.log(df['station_precip_mm'])
+    df['reanalysis_precip_amt_kg_per_m2'] = np.log(df['reanalysis_precip_amt_kg_per_m2'])
+    df['precipitation_amt_mm'] = np.log(df['precipitation_amt_mm'])
+    df.iloc[:,:-416]['total_cases2'] = np.log(df['total_cases2'])
+    df.loc[df['station_precip_mm']<0, 'station_precip_mm'] = 0.0
+    df.loc[df['reanalysis_precip_amt_kg_per_m2']<0, 'reanalysis_precip_amt_kg_per_m2'] = 0.0
+    df.loc[df['precipitation_amt_mm']<0, 'precipitation_amt_mm'] = 0.0
+    df.loc[df['total_cases2']<0, 'total_cases2'] = 0.0
+
+    # drop irrelevant columns
+    # Features “precipitation_amount_mm” and “reanalyzes_sat_precipi_amt_mm” were 
+    #	found to be 100% correlated (pearson), so we dropped the latter.
+    # Feature “week_start_date” was dropped since timescale is set by year and weekofyear features.
+    # 
+    df.drop(['week_start_date','reanalysis_sat_precip_amt_mm'], axis=1, inplace=True)
+
+    # convert all temperature measurements to Celsius
+    df['reanalysis_dew_point_temp_k'] = df['reanalysis_dew_point_temp_k'] - 273.15 
+    df['reanalysis_air_temp_k'] = df['reanalysis_air_temp_k'] - 273.15
+    df['reanalysis_max_air_temp_k'] = df['reanalysis_max_air_temp_k'] - 273.15
+    df['reanalysis_min_air_temp_k'] = df['reanalysis_min_air_temp_k'] - 273.15
+    df['reanalysis_avg_temp_k'] = df['reanalysis_avg_temp_k'] - 273.15
+    df['reanalysis_tdtr_k'] = df['reanalysis_tdtr_k'] - 273.15
+
+    # will not scale city, year and weekofyear
+    cyw_arry = df.values[:,0:3]
+    X = df.values[:,3:]
+
+    # scale all features
+    if flagin:
+       # dataframe has flag
+       y = X[:,-1].reshape(X.shape[0],1)
+       X = X[:,:-1].astype('float32')
+    else:
+       X = df.values.astype('float32')
+
+    scaler = MinMaxScaler(feature_range=(-1,1))
+    X_scaled = scaler.fit_transform(X)
+
+    # put back city, year and weekofyear
+    X_scaled = np.concatenate((cyw_arry, X_scaled), axis=1) 
+
+    if flagin: 
+       df_arry = np.concatenate((X_scaled, y), axis=1) 
+    else:
+       df_arry = X_scaled   
+
+    return pd.DataFrame(df_arry, columns=df.columns) 
+ 
 
 # preprocess train data
 def preprocess(df, timesteps=1):
 
-    # step 4: split array into features (starting at col 5) and labels 
     X = df.values[:,:-1].astype('float32')
     y = df.values[:,-1].reshape(X.shape[0],1)
-    
-    # step 5: normalize all features 
-    scaler = MinMaxScaler(feature_range=(0,1))
-    X_scaled = scaler.fit_transform(X)
 
     # shifts features one row at a time and pads them to the left of existing feature set
     feature_count = X.shape[1]
-    X_scaled= X_scaled[:-1,:feature_count] 
+    X_scaled= X[:-1,:feature_count] 
     for i in range(1, timesteps):
         leftadd = X_scaled[:-1,:feature_count] 
         X_scaled = np.concatenate((leftadd, X_scaled[1:,:]), axis=1)
@@ -127,7 +176,7 @@ def preprocess_test(df_train, df_test, timesteps=1):
     Xtrain = df_train.values[:,:-1].astype('float32')
 
     X = np.concatenate((Xtrain, df_test.values.astype('float32')), axis=0)
-    scaler = MinMaxScaler(feature_range=(0,1))
+    scaler = MinMaxScaler(feature_range=(-1,1))
     X_scaled = scaler.fit_transform(X)
 
     # shifts features one row at a time and pads them to the left of existing feature set
