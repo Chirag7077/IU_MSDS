@@ -4,6 +4,8 @@
 * Must create sub-directory "glove" and download Glove vectors pre-trained on Twitter [glove.twitter.27B.zip](https://nlp.stanford.edu/projects/glove/)
 
 # Notebooks that create input files for my models
+
+These notebooks create 3 pre-processed datasets: "PubMed_20k_RCT.csv", "PubMed_20k_RCT_POS_TAG.csv", and "PubMed_20k_RCT_CONSTPARSE.csv".  The datasets were too large to load to GitHub, given my account privileges.
 1. [create_combined_dataset.ipynb](https://github.com/csathler/IU_MSDS/blob/master/NLP/project/create_combined_dataset.ipynb)
 2. [create_pos_tag_dataset.ipynb](https://github.com/csathler/IU_MSDS/blob/master/NLP/project/create_pos_tag_dataset.ipynb)
 3. [create_constituent_tree_dataset.ipynb](https://github.com/csathler/IU_MSDS/blob/master/NLP/project/create_constituent_tree_dataset.ipynb)
