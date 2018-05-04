@@ -8,6 +8,8 @@
 2. [create_pos_tag_dataset.ipynb](https://github.com/csathler/IU_MSDS/blob/master/NLP/project/create_pos_tag_dataset.ipynb)
 3. [create_constituent_tree_dataset.ipynb](https://github.com/csathler/IU_MSDS/blob/master/NLP/project/create_constituent_tree_dataset.ipynb)
 
+Note: Extraction of constituent parse tree takes 20+ hours and require setting up CoreNLP server.
+
 # Models for sentence classification (must be run first)
 
 | Model        | Feature Set      | Notebook |
